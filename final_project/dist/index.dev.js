@@ -40,7 +40,7 @@ app.use("/customer/auth/*", function auth(req, res, next) {
     });
   }
 });
-var PORT = 5000;
+var PORT = 5001;
 app.use("/customer", customer_routes);
 app.use("/", genl_routes);
 app.listen(PORT, function () {
