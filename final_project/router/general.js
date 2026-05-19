@@ -1,8 +1,33 @@
 const express = require('express');
-const axios = require('axios');
-
-const books = require('./booksdb.js');
+let books = require("./booksdb.js");
+const { Axios } = require('axios');
+let isValid = require("./auth_users.js").isValid;
+let users = require("./auth_users.js").users;
 const public_users = express.Router();
+
+
+
+public_users.post("/register", (req,res) => {
+  //consts to take the username and password from the request body
+  const username = req.body.username;
+  const password = req.body.password;
+
+  //check if username and password are provided
+  if (username && password) {
+    //check if the username doesn't already exist
+    if (!isValid(username)) {
+      //add the new user to the users array
+      users.push({"username": username, "password": password});
+      return res.status(200).json({message: "User successfully registered. Now you can login"});
+    }else{
+      return res.status(409).json({message: "User already exists!"});
+    }
+  }
+  //return error response if username or password is missing
+  return res.status(400).json({message: "Unable to register user."});
+});
+
+
 
 /* =====================================================
 TASK 10 - GET ALL BOOKS (Async/Await)
@@ -83,7 +108,7 @@ public_users.get('/author/:author', async (req, res) => {
 /* =====================================================
 TASK 13 - GET BOOKS BY TITLE (Promise + Axios)
 ===================================================== */
-public_users.get('/title/:title', (req, res) => {
+public_users.get('/title/:title', async (req, res) => {
 
   const title = req.params.title.toLowerCase();
 
@@ -108,6 +133,26 @@ public_users.get('/title/:title', (req, res) => {
         message: "Error retrieving books by title"
       });
     });
+});
+
+
+
+//  Get book review
+public_users.get('/review/:isbn',function (req, res) {
+  const isbnParams = req.params.isbn;
+  const foundBook = books[isbnParams];
+  
+    // no reviews OR empty object
+  if (!foundBook.reviews || Object.keys(foundBook.reviews).length === 0) {
+    return res.status(200).json({ message: "there is no submitted review for this book" });
+  }
+  
+  if(foundBook) {
+    return res.status(200).json(foundBook.reviews);
+  }else{
+    return res.status(404).json({message: "Book not found"}); 
+  }
+
 });
 
 

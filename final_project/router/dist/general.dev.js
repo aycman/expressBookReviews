@@ -2,11 +2,44 @@
 
 var express = require('express');
 
-var axios = require('axios');
+var books = require("./booksdb.js");
 
-var books = require('./booksdb.js');
+var _require = require('axios'),
+    Axios = _require.Axios;
+
+var isValid = require("./auth_users.js").isValid;
+
+var users = require("./auth_users.js").users;
 
 var public_users = express.Router();
+public_users.post("/register", function (req, res) {
+  //consts to take the username and password from the request body
+  var username = req.body.username;
+  var password = req.body.password; //check if username and password are provided
+
+  if (username && password) {
+    //check if the username doesn't already exist
+    if (!isValid(username)) {
+      //add the new user to the users array
+      users.push({
+        "username": username,
+        "password": password
+      });
+      return res.status(200).json({
+        message: "User successfully registered. Now you can login"
+      });
+    } else {
+      return res.status(409).json({
+        message: "User already exists!"
+      });
+    }
+  } //return error response if username or password is missing
+
+
+  return res.status(400).json({
+    message: "Unable to register user."
+  });
+});
 /* =====================================================
 TASK 10 - GET ALL BOOKS (Async/Await)
 ===================================================== */
@@ -108,25 +141,56 @@ public_users.get('/author/:author', function _callee2(req, res) {
 TASK 13 - GET BOOKS BY TITLE (Promise + Axios)
 ===================================================== */
 
-public_users.get('/title/:title', function (req, res) {
-  var title = req.params.title.toLowerCase();
-  axios.get('http://localhost:5001/').then(function (response) {
-    var result = Object.values(response.data).filter(function (book) {
-      return book.title.toLowerCase() === title;
-    });
+public_users.get('/title/:title', function _callee3(req, res) {
+  var title;
+  return regeneratorRuntime.async(function _callee3$(_context3) {
+    while (1) {
+      switch (_context3.prev = _context3.next) {
+        case 0:
+          title = req.params.title.toLowerCase();
+          axios.get('http://localhost:5001/').then(function (response) {
+            var result = Object.values(response.data).filter(function (book) {
+              return book.title.toLowerCase() === title;
+            });
 
-    if (result.length === 0) {
-      return res.status(404).json({
-        message: "No books found for this title"
-      });
+            if (result.length === 0) {
+              return res.status(404).json({
+                message: "No books found for this title"
+              });
+            }
+
+            return res.status(200).json(result);
+          })["catch"](function () {
+            return res.status(500).json({
+              message: "Error retrieving books by title"
+            });
+          });
+
+        case 2:
+        case "end":
+          return _context3.stop();
+      }
     }
-
-    return res.status(200).json(result);
-  })["catch"](function () {
-    return res.status(500).json({
-      message: "Error retrieving books by title"
-    });
   });
+}); //  Get book review
+
+public_users.get('/review/:isbn', function (req, res) {
+  var isbnParams = req.params.isbn;
+  var foundBook = books[isbnParams]; // no reviews OR empty object
+
+  if (!foundBook.reviews || Object.keys(foundBook.reviews).length === 0) {
+    return res.status(200).json({
+      message: "there is no submitted review for this book"
+    });
+  }
+
+  if (foundBook) {
+    return res.status(200).json(foundBook.reviews);
+  } else {
+    return res.status(404).json({
+      message: "Book not found"
+    });
+  }
 });
 /* =====================================================
 EXPORT
