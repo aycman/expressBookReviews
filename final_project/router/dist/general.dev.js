@@ -2,66 +2,124 @@
 
 var express = require('express');
 
-var books = require("./booksdb.js");
+var books = require("./booksdb.js"); // Import axios correctly
 
-var _require = require('axios'),
-    Axios = _require.Axios;
+
+var axios = require('axios'); // Import helper functions and shared users array
+
 
 var isValid = require("./auth_users.js").isValid;
 
-var users = require("./auth_users.js").users;
+var users = require("./auth_users.js").users; // Create router for public users
+
 
 var public_users = express.Router();
+/*
+|--------------------------------------------------------------------------
+| REGISTER NEW USER
+|--------------------------------------------------------------------------
+| Route:
+| POST /register
+|
+| Request Body Example:
+| {
+|   "username": "john",
+|   "password": "1234"
+| }
+|--------------------------------------------------------------------------
+*/
+
 public_users.post("/register", function (req, res) {
-  //consts to take the username and password from the request body
+  // Get username and password from request body
   var username = req.body.username;
-  var password = req.body.password; //check if username and password are provided
+  var password = req.body.password; // Check if username and password are provided
 
   if (username && password) {
-    //check if the username doesn't already exist
+    // Check if username already exists
     if (!isValid(username)) {
-      //add the new user to the users array
+      /*
+      |--------------------------------------------------------------------------
+      | Add new user to users array
+      |--------------------------------------------------------------------------
+      | Example:
+      | users.push({
+      |   username: "john",
+      |   password: "1234"
+      | })
+      |--------------------------------------------------------------------------
+      */
       users.push({
         "username": username,
         "password": password
-      });
+      }); // Successful registration
+
       return res.status(200).json({
         message: "User successfully registered. Now you can login"
       });
     } else {
+      // Username already exists
       return res.status(409).json({
         message: "User already exists!"
       });
     }
-  } //return error response if username or password is missing
+  } // Missing username or password
 
 
   return res.status(400).json({
     message: "Unable to register user."
   });
-}); // Get the book list available in the shop
-//using promise callbacks or async-await + axios
+});
+/*
+|--------------------------------------------------------------------------
+| GET ALL BOOKS
+|--------------------------------------------------------------------------
+| Route:
+| GET /
+|
+| Uses Promise callbacks
+|--------------------------------------------------------------------------
+*/
 
 public_users.get('/', function (req, res) {
   new Promise(function (resolve, reject) {
+    // Check if books object exists
     if (books) {
+      // Resolve with books data
       resolve(books);
     } else {
+      // Reject if books not found
       reject("Books not found");
     }
   }).then(function (data) {
+    /*
+    |--------------------------------------------------------------------------
+    | Send formatted JSON response
+    |--------------------------------------------------------------------------
+    | JSON.stringify(data, null, 4)
+    |
+    | null -> no replacer function
+    | 4    -> indentation spaces
+    |--------------------------------------------------------------------------
+    */
     res.send(JSON.stringify(data, null, 4));
   })["catch"](function (err) {
+    // Error response
     res.status(404).json({
       message: err
     });
   });
 });
-
-var axios = require('axios'); // Get book details based on ISBN
-//send the book details as response
-//using Async.Await + axios
-
+/*
+|--------------------------------------------------------------------------
+| GET BOOK BY ISBN
+|--------------------------------------------------------------------------
+| Route:
+| GET /isbn/:isbn
+|
+| Uses:
+| Async/Await + Axios
+|--------------------------------------------------------------------------
+*/
 
 public_users.get('/isbn/:isbn', function _callee(req, res) {
   var isbn, response, allBooks, foundBook;
@@ -70,11 +128,17 @@ public_users.get('/isbn/:isbn', function _callee(req, res) {
       switch (_context.prev = _context.next) {
         case 0:
           _context.prev = 0;
-          //retrieve the isbn from the request parameter
+          // Get ISBN from request parameters
           isbn = req.params.isbn;
           /*
-          axios request to local endpoint
-          retrieves all books data
+          |--------------------------------------------------------------------------
+          | Axios request to local endpoint
+          |--------------------------------------------------------------------------
+          | Sends GET request to:
+          | http://localhost:5001/
+          |
+          | Retrieves all books
+          |--------------------------------------------------------------------------
           */
 
           _context.next = 4;
@@ -82,10 +146,10 @@ public_users.get('/isbn/:isbn', function _callee(req, res) {
 
         case 4:
           response = _context.sent;
-          //extract books data from response
-          allBooks = response.data; //find matching book by ISBN
+          // Extract books data from response
+          allBooks = response.data; // Find matching book using ISBN key
 
-          foundBook = allBooks[isbn]; //check if book exists
+          foundBook = allBooks[isbn]; // Check if book exists
 
           if (!foundBook) {
             _context.next = 11;
@@ -116,21 +180,50 @@ public_users.get('/isbn/:isbn', function _callee(req, res) {
       }
     }
   }, null, null, [[0, 14]]);
-}); // Get book details based on author
-//using promise callbacks
+});
+/*
+|--------------------------------------------------------------------------
+| GET BOOKS BY AUTHOR
+|--------------------------------------------------------------------------
+| Route:
+| GET /author/:author
+|
+| Uses Promise callbacks
+|--------------------------------------------------------------------------
+*/
 
 public_users.get('/author/:author', function (req, res) {
   new Promise(function (resolve, reject) {
-    //1. Obtain all the keys for the 'books' object.
-    var bookKeys = Object.keys(books); //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
+    /*
+    |--------------------------------------------------------------------------
+    | Get all keys from books object
+    |--------------------------------------------------------------------------
+    | Example:
+    | ["1", "2", "3"]
+    |--------------------------------------------------------------------------
+    */
+    var bookKeys = Object.keys(books); // Get author from request parameter
 
-    var authorParams = req.params.author;
+    var authorParams = req.params.author; // Store matching books
+
     var matchingBooks = [];
+    /*
+    |--------------------------------------------------------------------------
+    | Iterate through books
+    |--------------------------------------------------------------------------
+    */
+
     bookKeys.forEach(function (key) {
+      /*
+      |--------------------------------------------------------------------------
+      | Compare authors (case-insensitive)
+      |--------------------------------------------------------------------------
+      */
       if (books[key].author.toLowerCase() === authorParams.toLowerCase()) {
+        // Add matching book
         matchingBooks.push(books[key]);
       }
-    }); //3. If a match is found, return the book details as a response.
+    }); // Check if matching books found
 
     if (matchingBooks.length > 0) {
       resolve(matchingBooks);
@@ -138,24 +231,47 @@ public_users.get('/author/:author', function (req, res) {
       reject("Book not found");
     }
   }).then(function (data) {
+    // Success response
     res.status(200).json(data);
   })["catch"](function (err) {
+    // Error response
     res.status(404).json({
       message: err
     });
   });
-}); // Get all books based on title
-//using promise callbacks
+});
+/*
+|--------------------------------------------------------------------------
+| GET BOOKS BY TITLE
+|--------------------------------------------------------------------------
+| Route:
+| GET /title/:title
+|
+| Uses Promise callbacks
+|--------------------------------------------------------------------------
+*/
 
 public_users.get('/title/:title', function (req, res) {
   new Promise(function (resolve, reject) {
-    //1. Obtain all the values for the 'books' object.
-    var bookValues = Object.values(books); //2. Iterate through the 'books' array & check the title matches the one provided in the request parameters.
+    /*
+    |--------------------------------------------------------------------------
+    | Get all book objects as array
+    |--------------------------------------------------------------------------
+    */
+    var bookValues = Object.values(books); // Get title from request parameter
 
     var titleParams = req.params.title;
+    /*
+    |--------------------------------------------------------------------------
+    | Filter matching books
+    |--------------------------------------------------------------------------
+    | Case-insensitive comparison
+    |--------------------------------------------------------------------------
+    */
+
     var matchingBooks = bookValues.filter(function (book) {
       return book.title.toLowerCase() === titleParams.toLowerCase();
-    }); //3. If a match is found, return the book details as a response.
+    }); // Check if matches found
 
     if (matchingBooks.length > 0) {
       resolve(matchingBooks);
@@ -163,24 +279,54 @@ public_users.get('/title/:title', function (req, res) {
       reject("Book not found");
     }
   }).then(function (data) {
+    // Success response
     res.status(200).json(data);
   })["catch"](function (err) {
+    // Error response
     res.status(404).json({
       message: err
     });
   });
-}); //  Get book review
+});
+/*
+|--------------------------------------------------------------------------
+| GET BOOK REVIEWS
+|--------------------------------------------------------------------------
+| Route:
+| GET /review/:isbn
+|--------------------------------------------------------------------------
+*/
 
 public_users.get('/review/:isbn', function (req, res) {
-  var isbnParams = req.params.isbn;
-  var foundBook = books[isbnParams];
+  // Get ISBN from request parameters
+  var isbnParams = req.params.isbn; // Find matching book
+
+  var foundBook = books[isbnParams]; // Check if book exists
 
   if (foundBook) {
+    /*
+    |--------------------------------------------------------------------------
+    | Return reviews object
+    |--------------------------------------------------------------------------
+    | Example:
+    | {
+    |   "john": "Amazing book",
+    |   "mike": "Very useful"
+    | }
+    |--------------------------------------------------------------------------
+    */
     return res.status(200).json(foundBook.reviews);
   } else {
+    // Book not found
     return res.status(404).json({
       message: "Book not found"
     });
   }
 });
+/*
+|--------------------------------------------------------------------------
+| Export Router
+|--------------------------------------------------------------------------
+*/
+
 module.exports.general = public_users;
