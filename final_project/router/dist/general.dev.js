@@ -56,16 +56,17 @@ public_users.get('/', function (req, res) {
 }); // Get book details based on ISBN
 
 public_users.get('/isbn/:isbn', function (req, res) {
-  //retrieve the isbn from the request parameter
-  var isbn = req.params.isbn; //convert object values to an array and find the matching book
-
-  var bookList = Object.values(books);
-  var foundBook = bookList.find(function (book) {
-    return book.ISBN === isbn;
-  }); //send the book details as response
+  //send the book details as response
   //using promise callbacks
-
   new Promise(function (resolve, reject) {
+    //retrieve the isbn from the request parameter
+    var isbn = req.params.isbn; //convert object values to an array and find the matching book
+
+    var bookList = Object.values(books);
+    var foundBook = bookList.find(function (book) {
+      return book.ISBN === isbn;
+    });
+
     if (foundBook) {
       resolve(foundBook);
     } else {
@@ -79,26 +80,33 @@ public_users.get('/isbn/:isbn', function (req, res) {
     });
   });
 }); // Get book details based on author
+//using promise callbacks
 
 public_users.get('/author/:author', function (req, res) {
-  //1. Obtain all the keys for the 'books' object.
-  var bookKeys = Object.keys(books); //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
+  new Promise(function (resolve, reject) {
+    //1. Obtain all the keys for the 'books' object.
+    var bookKeys = Object.keys(books); //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
 
-  var authorParams = req.params.author;
-  var matchingBooks = [];
-  bookKeys.forEach(function (key) {
-    if (books[key].author.toLowerCase() === authorParams.toLowerCase()) {
-      matchingBooks.push(books[key]);
+    var authorParams = req.params.author;
+    var matchingBooks = [];
+    bookKeys.forEach(function (key) {
+      if (books[key].author.toLowerCase() === authorParams.toLowerCase()) {
+        matchingBooks.push(books[key]);
+      }
+    }); //3. If a match is found, return the book details as a response.
+
+    if (matchingBooks.length > 0) {
+      resolve(matchingBooks);
+    } else {
+      reject("Book not found");
     }
-  }); //3. If a match is found, return the book details as a response.
-
-  if (matchingBooks.length > 0) {
-    return res.status(200).json(matchingBooks);
-  } else {
-    return res.status(401).json({
-      message: "Book not found"
+  }).then(function (data) {
+    res.status(200).json(data);
+  })["catch"](function (err) {
+    res.status(404).json({
+      message: err
     });
-  }
+  });
 }); // public_users.get('/author/:author', function (req, res) {
 //   const authorParams = req.params.author;
 //   // ۱. تبدیل مستقیم مقادیر شیء به یک آرایه از کتاب‌ها

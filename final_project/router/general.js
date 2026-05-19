@@ -48,16 +48,17 @@ public_users.get('/', function (req, res) {
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
-  //retrieve the isbn from the request parameter
-  const isbn = req.params.isbn;
-
-  //convert object values to an array and find the matching book
-  const bookList = Object.values(books);
-  const foundBook = bookList.find(book => book.ISBN === isbn);
 
   //send the book details as response
   //using promise callbacks
   new Promise((resolve, reject) => {
+      //retrieve the isbn from the request parameter
+      const isbn = req.params.isbn;
+
+      //convert object values to an array and find the matching book
+      const bookList = Object.values(books);
+      const foundBook = bookList.find(book => book.ISBN === isbn);
+
     if(foundBook){
       resolve(foundBook);
     }else{
@@ -77,25 +78,33 @@ public_users.get('/isbn/:isbn',function (req, res) {
 
   
 // Get book details based on author
+//using promise callbacks
 public_users.get('/author/:author',function (req, res) {
-  //1. Obtain all the keys for the 'books' object.
-  const bookKeys = Object.keys(books);
-  //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
-  const authorParams = req.params.author;
-  const matchingBooks = [];
+  new Promise((resolve, reject) => {
+    //1. Obtain all the keys for the 'books' object.
+    const bookKeys = Object.keys(books);
+    //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
+    const authorParams = req.params.author;
+    const matchingBooks = [];
 
-
-  bookKeys.forEach((key) => {
+      bookKeys.forEach((key) => {
     if(books[key].author.toLowerCase() === authorParams.toLowerCase()) {
       matchingBooks.push(books[key]);
     } 
+    })
+    //3. If a match is found, return the book details as a response.
+    if(matchingBooks.length > 0) {
+      resolve(matchingBooks);
+    }else{
+      reject("Book not found");
+    }
   })
-  //3. If a match is found, return the book details as a response.
-  if(matchingBooks.length > 0) {
-    return res.status(200).json(matchingBooks);
-  }else{
-    return res.status(401).json({message: "Book not found"});
-  }
+  .then((data) => {
+    res.status(200).json(data);
+  })
+  .catch((err) => {
+    res.status(404).json({message: err});
+  });
 });
 
 // public_users.get('/author/:author', function (req, res) {
