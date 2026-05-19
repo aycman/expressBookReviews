@@ -1,5 +1,6 @@
 const express = require('express');
 let books = require("./booksdb.js");
+const { Axios } = require('axios');
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
@@ -18,11 +19,11 @@ public_users.post("/register", (req,res) => {
       users.push({"username": username, "password": password});
       return res.status(200).json({message: "User successfully registered. Now you can login"});
     }else{
-      return res.status(404).json({message: "User already exists!"});
+      return res.status(409).json({message: "User already exists!"});
     }
   }
   //return error response if username or password is missing
-  return res.status(404).json({message: "Unable to register user."});
+  return res.status(400).json({message: "Unable to register user."});
 });
 
 
@@ -46,32 +47,45 @@ public_users.get('/', function (req, res) {
 });
 
 
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
 
+
+const axios = require('axios');
+
+// Get book details based on ISBN
   //send the book details as response
-  //using promise callbacks
-  new Promise((resolve, reject) => {
+  //using Async.Await + axios
+public_users.get('/isbn/:isbn', async function (req, res) {
+  try{
       //retrieve the isbn from the request parameter
       const isbn = req.params.isbn;
 
-      //convert object values to an array and find the matching book
-      const bookList = Object.values(books);
-      const foundBook = bookList.find(book => book.ISBN === isbn);
+      /*
+      axios request to local endpoint
+      retrieves all books data
+      */
+     const response = await axios.get('http://localhost:5001/');
 
-    if(foundBook){
-      resolve(foundBook);
-    }else{
-      reject("Book not found");
-    }
-  })
-  .then((data) => {
-    res.status(200).json(data);
-  })
-  .catch((err) =>{
-    res.status(404).json({message: err});
+    //extract books data from response
+    const allBooks = response.data;
 
-  });
+    //find matching book by ISBN
+    const foundBook = allBooks[isbn];
+
+    //check if book exists
+    if(foundBook) {
+      return res.status(200).json(foundBook);
+    }else {
+      return res.status(404).json({
+        message: "Book not found"
+      })
+    } 
+  } catch (err) {
+
+    // Handle request errors
+    return res.status(500).json({
+      message: "Error retrieving book details"
+    });
+  }
 });
  
 
@@ -138,13 +152,11 @@ public_users.get('/title/:title',function (req, res) {
 
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
-  const booksArr = Object.values(books);
   const isbnParams = req.params.isbn;
-
-  const foundBook = booksArr.filter(book => book.ISBN === isbnParams);
+  const foundBook = books[isbnParams];
   
-  if(foundBook.length > 0) {
-    return res.status(200).json(foundBook[0].reviews);
+  if(foundBook) {
+    return res.status(200).json(foundBook.reviews);
   }else{
     return res.status(404).json({message: "Book not found"}); 
   }

@@ -20,7 +20,9 @@ var books = {
     "author": "Unknown",
     "title": "The Epic Of Gilgamesh",
     "ISBN": "9780140449265",
-    "reviews": {}
+    "reviews": {
+      "user1": "Great book, highly recommended!"
+    }
   },
   5: {
     "author": "Unknown",

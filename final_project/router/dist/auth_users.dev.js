@@ -79,7 +79,8 @@ regd_users.post("/login", function (req, res) {
       accessToken: accessToken
     };
     return res.status(200).json({
-      message: "User successfully logged in"
+      message: "Customer successfully logged in",
+      token: accessToken
     });
   }
 
@@ -89,26 +90,15 @@ regd_users.post("/login", function (req, res) {
 }); // Add a book review and update the book review
 
 regd_users.put("/auth/review/:isbn", function (req, res) {
-  //get a review for a book with ISBN number as a req parameter
-  //get the username from the session
-  //get posted review with the username from the session
-  //check if the book with the given ISBN number exists in the books database
-  //if it exists, add the review along with the username to the book's reviews object and return a success message
-  //if it does not exist, return an error message indicating that the book was not found
-  //if another review by the same user already exists for the same book, update the review with the new review and return a success message
-  //if another user has already posted a review for the same book, it will get added as a different review under the same ISBN and return a success message
   //get ISBN from request paramenters
   var isbn = req.params.isbn; //get review text from requested body
 
   var review = req.body.review; //get username from session - get logged-in username from JWT payload
   //req.user is added in index.js after token verification in the auth middleware
 
-  var username = req.user.data; //check if book exists in database
+  var username = req.user.data; //find book directly using object key
 
-  var bookKey = Object.keys(books).find(function (key) {
-    return books[key].ISBN === isbn;
-  });
-  var book = books[bookKey];
+  var book = books[isbn]; //check if book exists
 
   if (!book) {
     return res.status(404).json({
@@ -145,42 +135,31 @@ regd_users["delete"]("/auth/review/:isbn", function (req, res) {
   /*
     filter & delete the review based on the session username
     so that only the user who posted the review can delete it and also not other's reviews
-     Steps:
-    1. Get the ISBN from request parameters
-    2. Get the username from session (from JWT payload)
-    3. Check if the book with the given ISBN number exists in the books database
-    4. If it exists, check if a review by the same user exists for the same book
-    5. If it exists, delete the review and return a success message
-    6. If it does not exist, return an error message indicating that the review was not found for that user
-    7. If the book does not exist, return an error message indicating that the book was not found
   */
   //get ISBN from requested parameters
   var isbn = req.params.isbn; //get username from session - get logged-in username from JWT payload
   //req.user is added in index.js after token verification in the auth middleware
 
-  var username = req.user.data; //check if book exists in database
+  var username = req.user.data; //find book directly
 
-  var bookKeyIsbn = Object.keys(books).find(function (key) {
-    return books[key].ISBN === isbn;
-  }); //delete review if book exists
+  var book = books[isbn]; //check if book exists
 
-  if (bookKeyIsbn) {
-    if (books[bookKeyIsbn].reviews[username]) {
-      delete books[bookKeyIsbn].reviews[username]; //delete the review by deleting the username key from the reviews object
-
-      return res.status(200).json({
-        message: "Review successfully deleted"
-      });
-    } else {
-      return res.status(404).json({
-        message: "Book not found"
-      });
-    }
-
-    ;
-  } else {
+  if (!book) {
     return res.status(404).json({
       message: "Book not found"
+    });
+  } //check if review exists
+
+
+  if (book.reviews && book.reviews[username]) {
+    delete book.reviews[username]; //delete the review by deleting the username key from the reviews object
+
+    return res.status(200).json({
+      message: "Review successfully deleted"
+    });
+  } else {
+    return res.status(404).json({
+      message: "Review not found for this user"
     });
   }
 
