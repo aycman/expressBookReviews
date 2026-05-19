@@ -8,296 +8,163 @@ var books = require("./booksdb.js");
 
 var regd_users = express.Router();
 
-var session = require('express-session'); // Stores registered users
-// Example:
-// [
-//   { username: "john", password: "1234" },
-//   { username: "mike", password: "abcd" }
-// ]
+var session = require('express-session');
 
-
-var users = [];
-/*
-|--------------------------------------------------------------------------
-| Check if username already exists
-|--------------------------------------------------------------------------
-| Returns:
-| true  -> username exists
-| false -> username does not exist
-|--------------------------------------------------------------------------
-*/
+var users = []; // const doesExist = (username) => {
+//   //filter the users array and check if there is user with the same username
+//   let userswithsamename = users.filter((user) => { 
+//     return user.username === username; });
+//   //return true if any user with the same name is found, otherwise false
+//   if(userswithsamename.length > 0) {
+//     return true;
+//   } else {
+//     return false;
+//   }
+// }
+// Check if a user with the given username already exists
 
 var isValid = function isValid(username) {
-  // Find users with the same username
+  //returns boolean
+  //write code to check is the username is valid
+  //filter the users array and check if there is user with the same username
   var userswithsamename = users.filter(function (user) {
     return user.username === username;
-  }); // If array length > 0, username already exists
+  }); //return true if any user with the same name is found, otherwise false
 
   if (userswithsamename.length > 0) {
     return true;
   } else {
     return false;
   }
-};
-/*
-|--------------------------------------------------------------------------
-| Authenticate user
-|--------------------------------------------------------------------------
-| Checks if username + password match
-|
-| Returns:
-| true  -> valid login
-| false -> invalid login
-|--------------------------------------------------------------------------
-*/
+}; // Check if the user with the given username and password exists
 
 
 var authenticatedUser = function authenticatedUser(username, password) {
-  // Filter users matching username and password
+  //returns boolean
+  //write code to check if username and password match the one we have in records.
+  // Filter the users array for any user with the same username and password
   var validusers = users.filter(function (user) {
     return user.username === username && user.password === password;
-  }); // If at least one user matched => valid login
+  }); //return true if any valid user is found, otherwise false
 
   if (validusers.length > 0) {
     return true;
   } else {
     return false;
   }
-};
-/*
-|--------------------------------------------------------------------------
-| LOGIN ROUTE
-|--------------------------------------------------------------------------
-| Only registered users can login
-|
-| Steps:
-| 1. Get username/password from request body
-| 2. Validate credentials
-| 3. Generate JWT token
-| 4. Save token in session
-| 5. Return success response
-|--------------------------------------------------------------------------
-*/
+}; //only registered users can login
+//jwt token generation and authentication and session management
 
 
 regd_users.post("/login", function (req, res) {
-  // Extract login data from request body
   var username = req.body.username;
-  var password = req.body.password; // Check if username/password are missing
+  var password = req.body.password; //check if username and password are provided
 
   if (!username || !password) {
     return res.status(404).json({
       message: "username or password missing"
     });
-  } // Validate login credentials
+  } //validate user
 
 
   if (authenticatedUser(username, password)) {
-    /*
-    |--------------------------------------------------------------------------
-    | Create JWT token
-    |--------------------------------------------------------------------------
-    | Payload:
-    | {
-    |   data: username
-    | }
-    |
-    | Secret key: "access"
-    | Expiration: 1 hour
-    |--------------------------------------------------------------------------
-    */
+    //create JWT token with username as payload
     var accessToken = jwt.sign({
       data: username
     }, "access", {
       expiresIn: 60 * 60
-    });
-    /*
-    |--------------------------------------------------------------------------
-    | Save token in session
-    |--------------------------------------------------------------------------
-    | req.session.authorization becomes:
-    |
-    | {
-    |   accessToken: "jwt-token-here"
-    | }
-    |--------------------------------------------------------------------------
-    */
+    }); //save token in session 
 
     req.session.authorization = {
       accessToken: accessToken
-    }; // Successful login response
-
+    };
     return res.status(200).json({
       message: "Customer successfully logged in",
       token: accessToken
     });
-  } // Invalid username/password
-
+  }
 
   return res.status(208).json({
     message: "Invalid Login. Check username and password"
   });
-});
-/*
-|--------------------------------------------------------------------------
-| ADD / UPDATE BOOK REVIEW
-|--------------------------------------------------------------------------
-| Route:
-| PUT /customer/auth/review/:isbn
-|
-| Steps:
-| 1. Get ISBN from URL params
-| 2. Get review text from request body
-| 3. Get logged-in username from JWT payload
-| 4. Find book
-| 5. Create reviews object if missing
-| 6. Add/update review
-|--------------------------------------------------------------------------
-*/
+}); // Add a book review and update the book review
 
 regd_users.put("/auth/review/:isbn", function (req, res) {
-  // Get ISBN from URL parameter
-  var isbn = req.params.isbn; // Get review text from request body
-  // Example:
-  // {
-  //   "review": "Amazing book"
-  // }
+  //get ISBN from request paramenters
+  var isbn = req.params.isbn; //get review text from requested body
 
-  var review = req.body.review;
-  /*
-  |--------------------------------------------------------------------------
-  | Get logged-in username
-  |--------------------------------------------------------------------------
-  | req.user is added in auth middleware inside index.js
-  |
-  | Example:
-  | req.user = {
-  |   data: "john",
-  |   iat: 123456,
-  |   exp: 123456
-  | }
-  |--------------------------------------------------------------------------
-  */
+  var review = req.body.review; //get username from session - get logged-in username from JWT payload
+  //req.user is added in index.js after token verification in the auth middleware
 
-  var username = req.user.data; // Find book using ISBN key
+  var username = req.user.data; //find book directly using object key
 
-  var book = books[isbn]; // Check if book exists
+  var book = books[isbn]; //check if book exists
 
   if (!book) {
     return res.status(404).json({
       message: "Book not found"
     });
-  }
-  /*
-  |--------------------------------------------------------------------------
-  | Create reviews object if it doesn't exist
-  |--------------------------------------------------------------------------
-  | Example:
-  | reviews: {}
-  |--------------------------------------------------------------------------
-  */
+  } //if reviews object does not exist, create it
 
 
   if (!book.reviews) {
     book.reviews = {};
   }
   /*
-  |--------------------------------------------------------------------------
-  | Add or update review
-  |--------------------------------------------------------------------------
-  | reviews object structure:
-  |
-  | reviews: {
-  |   "john": "Great book",
-  |   "mike": "Amazing story"
-  | }
-  |
-  | If same username exists:
-  | old review gets overwritten (updated)
-  |--------------------------------------------------------------------------
-  */
-  // IMPORTANT:
-  // 'book' is a reference to the original object inside books database.
-  // So modifying book.reviews directly updates books[isbn].
+     Add or update review
+      reviews object structure:
+      reviews: {
+       "john": "Great book",
+       "mike": "Amazing story"
+     }
+      If the same username already exists,
+     its review will be overwritten (updated).
+   */
 
 
-  book.reviews[username] = review; // Success response
+  book.reviews[username] = review; //*** here book is a reference to the book object in the books database, so we are directly updating the reviews object of that book
+  //success response
 
   return res.status(200).json({
     message: "Review successfully added/updated",
     reviews: book.reviews
   });
-});
-/*
-|--------------------------------------------------------------------------
-| DELETE BOOK REVIEW
-|--------------------------------------------------------------------------
-| Route:
-| DELETE /customer/auth/review/:isbn
-|
-| Only the logged-in user's review can be deleted
-|--------------------------------------------------------------------------
-*/
+}); //delete a book review
 
 regd_users["delete"]("/auth/review/:isbn", function (req, res) {
-  // Get ISBN from URL parameter
-  var isbn = req.params.isbn; // Get logged-in username from JWT payload
+  /*
+    filter & delete the review based on the session username
+    so that only the user who posted the review can delete it and also not other's reviews
+  */
+  //get ISBN from requested parameters
+  var isbn = req.params.isbn; //get username from session - get logged-in username from JWT payload
+  //req.user is added in index.js after token verification in the auth middleware
 
-  var username = req.user.data; // Find book using ISBN
+  var username = req.user.data; //find book directly
 
-  var book = books[isbn]; // Check if book exists
+  var book = books[isbn]; //check if book exists
 
   if (!book) {
     return res.status(404).json({
       message: "Book not found"
     });
-  }
-  /*
-  |--------------------------------------------------------------------------
-  | Check if review exists for this user
-  |--------------------------------------------------------------------------
-  | Example:
-  | reviews: {
-  |   "john": "Great book"
-  | }
-  |--------------------------------------------------------------------------
-  */
+  } //check if review exists
 
 
   if (book.reviews && book.reviews[username]) {
-    /*
-    |--------------------------------------------------------------------------
-    | Delete review
-    |--------------------------------------------------------------------------
-    | delete removes the property from object
-    |
-    | Before:
-    | {
-    |   john: "Great book"
-    | }
-    |
-    | After:
-    | {}
-    |--------------------------------------------------------------------------
-    */
-    delete book.reviews[username]; // Success response
+    delete book.reviews[username]; //delete the review by deleting the username key from the reviews object
 
     return res.status(200).json({
       message: "Review successfully deleted"
     });
   } else {
-    // Review not found for this user
     return res.status(404).json({
       message: "Review not found for this user"
     });
   }
-});
-/*
-|--------------------------------------------------------------------------
-| Export router + helper functions
-|--------------------------------------------------------------------------
-*/
 
+  ;
+});
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
