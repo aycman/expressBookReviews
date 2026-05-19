@@ -6,19 +6,6 @@ const session = require('express-session')
 
 let users = [];
 
-// const doesExist = (username) => {
-//   //filter the users array and check if there is user with the same username
-//   let userswithsamename = users.filter((user) => { 
-//     return user.username === username; });
-
-//   //return true if any user with the same name is found, otherwise false
-//   if(userswithsamename.length > 0) {
-//     return true;
-//   } else {
-//     return false;
-//   }
-// }
-
 
 // Check if a user with the given username already exists
 const isValid = (username)=>{ //returns boolean

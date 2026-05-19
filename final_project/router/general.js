@@ -28,7 +28,7 @@ public_users.post("/register", (req,res) => {
 
 
 // Get the book list available in the shop
-  //using promise callbacks or async-await + axios
+  //using promise callbacks
 public_users.get('/', function (req, res) {
 
     new Promise((resolve, reject) => {
@@ -49,8 +49,10 @@ public_users.get('/', function (req, res) {
 
 
 
-const axios = require('axios');
 
+/* =====================================================
+TASK 11 - SEARCH BY ISBN (Async/Await)
+===================================================== */
 // Get book details based on ISBN
   //send the book details as response
   //using Async.Await + axios
@@ -90,11 +92,13 @@ public_users.get('/isbn/:isbn', async function (req, res) {
  
 
 
-  
+  /* =====================================================
+TASK 12 - SEARCH BY AUTHOR (Async/Await)
+===================================================== */
 // Get book details based on author
-//using promise callbacks
+//using async await axios
 public_users.get('/author/:author',function (req, res) {
-  new Promise((resolve, reject) => {
+  try{
     //1. Obtain all the keys for the 'books' object.
     const bookKeys = Object.keys(books);
     //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
@@ -108,25 +112,26 @@ public_users.get('/author/:author',function (req, res) {
     })
     //3. If a match is found, return the book details as a response.
     if(matchingBooks.length > 0) {
-      resolve(matchingBooks);
+          return res.status(200).json(matchingBooks);
     }else{
-      reject("Book not found");
-    }
-  })
-  .then((data) => {
-    res.status(200).json(data);
-  })
-  .catch((err) => {
-    res.status(404).json({message: err});
-  });
+          return res.status(404).json({message: "Book not found"});
+  }
+ } catch (err) {
+    //handle request errors
+    return res.status(500).json({
+      message: "Error retrieving book details"
+    });
+  }
 });
 
 
-
+/* =====================================================
+TASK 13 - SEARCH BY TITLE (Async/Await)
+===================================================== */
 // Get all books based on title
-//using promise callbacks
+//using asyn awail axios
 public_users.get('/title/:title',function (req, res) {
-  new Promise((resolve, reject) => {
+  try{
       //1. Obtain all the values for the 'books' object.
     const bookValues = Object.values(books);
     //2. Iterate through the 'books' array & check the title matches the one provided in the request parameters.
@@ -136,18 +141,18 @@ public_users.get('/title/:title',function (req, res) {
 
     //3. If a match is found, return the book details as a response.
     if (matchingBooks.length > 0) {
-      resolve(matchingBooks);
+        return res.status(200).json(matchingBooks);
     }else{
-      reject("Book not found");
+        return res.status(404).json({message: "Book not found"});
     }
-  })
-  .then((data) => {
-    res.status(200).json(data);
-  })
-  .catch((err) => {
-    res.status(404).json({message: err});
-  })
+  } catch(err) {
+    //handle request errors
+    return res.status(500).json({
+      message: "Error retrieving book details"
+    });
+  }
 });
+
 
 
 //  Get book review

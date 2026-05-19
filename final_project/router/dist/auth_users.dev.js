@@ -10,18 +10,7 @@ var regd_users = express.Router();
 
 var session = require('express-session');
 
-var users = []; // const doesExist = (username) => {
-//   //filter the users array and check if there is user with the same username
-//   let userswithsamename = users.filter((user) => { 
-//     return user.username === username; });
-//   //return true if any user with the same name is found, otherwise false
-//   if(userswithsamename.length > 0) {
-//     return true;
-//   } else {
-//     return false;
-//   }
-// }
-// Check if a user with the given username already exists
+var users = []; // Check if a user with the given username already exists
 
 var isValid = function isValid(username) {
   //returns boolean

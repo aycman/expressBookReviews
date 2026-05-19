@@ -40,7 +40,7 @@ public_users.post("/register", function (req, res) {
     message: "Unable to register user."
   });
 }); // Get the book list available in the shop
-//using promise callbacks or async-await + axios
+//using promise callbacks
 
 public_users.get('/', function (req, res) {
   new Promise(function (resolve, reject) {
@@ -57,11 +57,12 @@ public_users.get('/', function (req, res) {
     });
   });
 });
-
-var axios = require('axios'); // Get book details based on ISBN
+/* =====================================================
+TASK 11 - SEARCH BY ISBN (Async/Await)
+===================================================== */
+// Get book details based on ISBN
 //send the book details as response
 //using Async.Await + axios
-
 
 public_users.get('/isbn/:isbn', function _callee(req, res) {
   var isbn, response, allBooks, foundBook;
@@ -116,11 +117,15 @@ public_users.get('/isbn/:isbn', function _callee(req, res) {
       }
     }
   }, null, null, [[0, 14]]);
-}); // Get book details based on author
-//using promise callbacks
+});
+/* =====================================================
+TASK 12 - SEARCH BY AUTHOR (Async/Await)
+===================================================== */
+// Get book details based on author
+//using async await axios
 
 public_users.get('/author/:author', function (req, res) {
-  new Promise(function (resolve, reject) {
+  try {
     //1. Obtain all the keys for the 'books' object.
     var bookKeys = Object.keys(books); //2. Iterate through the 'books' array & check the author matches the one provided in the request parameters.
 
@@ -133,22 +138,27 @@ public_users.get('/author/:author', function (req, res) {
     }); //3. If a match is found, return the book details as a response.
 
     if (matchingBooks.length > 0) {
-      resolve(matchingBooks);
+      return res.status(200).json(matchingBooks);
     } else {
-      reject("Book not found");
+      return res.status(404).json({
+        message: "Book not found"
+      });
     }
-  }).then(function (data) {
-    res.status(200).json(data);
-  })["catch"](function (err) {
-    res.status(404).json({
-      message: err
+  } catch (err) {
+    //handle request errors
+    return res.status(500).json({
+      message: "Error retrieving book details"
     });
-  });
-}); // Get all books based on title
-//using promise callbacks
+  }
+});
+/* =====================================================
+TASK 13 - SEARCH BY TITLE (Async/Await)
+===================================================== */
+// Get all books based on title
+//using asyn awail axios
 
 public_users.get('/title/:title', function (req, res) {
-  new Promise(function (resolve, reject) {
+  try {
     //1. Obtain all the values for the 'books' object.
     var bookValues = Object.values(books); //2. Iterate through the 'books' array & check the title matches the one provided in the request parameters.
 
@@ -158,17 +168,18 @@ public_users.get('/title/:title', function (req, res) {
     }); //3. If a match is found, return the book details as a response.
 
     if (matchingBooks.length > 0) {
-      resolve(matchingBooks);
+      return res.status(200).json(matchingBooks);
     } else {
-      reject("Book not found");
+      return res.status(404).json({
+        message: "Book not found"
+      });
     }
-  }).then(function (data) {
-    res.status(200).json(data);
-  })["catch"](function (err) {
-    res.status(404).json({
-      message: err
+  } catch (err) {
+    //handle request errors
+    return res.status(500).json({
+      message: "Error retrieving book details"
     });
-  });
+  }
 }); //  Get book review
 
 public_users.get('/review/:isbn', function (req, res) {
