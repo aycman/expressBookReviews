@@ -38,13 +38,40 @@ public_users.get('/', function (req, res) {
       }
     })
     .then((data) => {
-          res.send(JSON.stringify(books,null,4));
+          res.send(JSON.stringify(data,null,4));
     })
     .catch ((err) => {
-    res.status(500).json({message: err });
+    res.status(404).json({message: err });
   }); 
 });
 
+
+// Get book details based on ISBN
+public_users.get('/isbn/:isbn',function (req, res) {
+  //retrieve the isbn from the request parameter
+  const isbn = req.params.isbn;
+
+  //convert object values to an array and find the matching book
+  const bookList = Object.values(books);
+  const foundBook = bookList.find(book => book.ISBN === isbn);
+
+  //send the book details as response
+  //using promise callbacks
+  new Promise((resolve, reject) => {
+    if(foundBook){
+      resolve(foundBook);
+    }else{
+      reject("Book not found");
+    }
+  })
+  .then((data) => {
+    res.status(200).json(data);
+  })
+  .catch((err) =>{
+    res.status(404).json({message: err});
+
+  });
+});
  
 
 
