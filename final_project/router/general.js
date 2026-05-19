@@ -26,7 +26,6 @@ public_users.post("/register", (req,res) => {
 });
 
 
-const axios = require('axios');
 // Get the book list available in the shop
   //using promise callbacks or async-await + axios
 public_users.get('/', function (req, res) {
@@ -46,23 +45,6 @@ public_users.get('/', function (req, res) {
   }); 
 });
 
-
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  //retrieve the isbn from the request parameter
-  const isbn = req.params.isbn;
-
-  //convert object values to an array and find the matching book
-  const bookList = Object.values(books);
-  const foundBook = bookList.find(book => book.ISBN === isbn);
-
-  //send the book details as response
-  if(foundBook){
-    return res.status(200).json(foundBook);
-  }else{
-    return res.status(401).json({message: "Book not found"});
-  }
-});
  
 
 
