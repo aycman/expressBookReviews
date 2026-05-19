@@ -36,11 +36,26 @@ public_users.post("/register", function (req, res) {
   return res.status(404).json({
     message: "Unable to register user."
   });
-}); // Get the book list available in the shop
+});
+
+var axios = require('axios'); // Get the book list available in the shop
+//using promise callbacks or async-await + axios
+
 
 public_users.get('/', function (req, res) {
-  //get all the books information using JSON string
-  res.send(JSON.stringify(books, null, 4));
+  new Promise(function (resolve, reject) {
+    if (books) {
+      resolve(books);
+    } else {
+      reject("Books not found");
+    }
+  }).then(function (data) {
+    res.send(JSON.stringify(books, null, 4));
+  })["catch"](function (err) {
+    res.status(500).json({
+      message: err
+    });
+  });
 }); // Get book details based on ISBN
 
 public_users.get('/isbn/:isbn', function (req, res) {

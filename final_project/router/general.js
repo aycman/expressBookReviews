@@ -26,10 +26,24 @@ public_users.post("/register", (req,res) => {
 });
 
 
+const axios = require('axios');
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //get all the books information using JSON string
-  res.send(JSON.stringify(books,null,4));
+  //using promise callbacks or async-await + axios
+public_users.get('/', function (req, res) {
+
+    new Promise((resolve, reject) => {
+      if(books) {
+        resolve(books);
+      }else{
+        reject("Books not found");
+      }
+    })
+    .then((data) => {
+          res.send(JSON.stringify(books,null,4));
+    })
+    .catch ((err) => {
+    res.status(500).json({message: err });
+  }); 
 });
 
 
