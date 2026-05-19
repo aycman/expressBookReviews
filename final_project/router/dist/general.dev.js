@@ -4,12 +4,12 @@ var express = require('express');
 
 var axios = require('axios');
 
-var books = require("./booksdb.js");
+var books = require('./booksdb.js');
 
 var public_users = express.Router();
-/* =========================================
+/* =====================================================
 TASK 10 - GET ALL BOOKS (Async/Await)
-========================================= */
+===================================================== */
 
 public_users.get('/', function _callee(req, res) {
   return regeneratorRuntime.async(function _callee$(_context) {
@@ -33,12 +33,13 @@ public_users.get('/', function _callee(req, res) {
     }
   }, null, null, [[0, 4]]);
 });
-/* =========================================
+/* =====================================================
 TASK 11 - GET BOOK BY ISBN (Promise + Axios)
-========================================= */
+===================================================== */
 
 public_users.get('/isbn/:isbn', function (req, res) {
-  var isbn = req.params.isbn;
+  var isbn = req.params.isbn; // axios used only as required (no self-loop logic)
+
   axios.get('http://localhost:5001/').then(function (response) {
     var book = response.data[isbn];
 
@@ -51,55 +52,61 @@ public_users.get('/isbn/:isbn', function (req, res) {
     return res.status(200).json(book);
   })["catch"](function () {
     return res.status(500).json({
-      message: "Error fetching book"
+      message: "Error retrieving book by ISBN"
     });
   });
 });
-/* =========================================
-TASK 12 - GET BOOKS BY AUTHOR (Async/Await)
-========================================= */
+/* =====================================================
+TASK 12 - GET BOOKS BY AUTHOR (Async/Await + Axios)
+===================================================== */
 
 public_users.get('/author/:author', function _callee2(req, res) {
-  var author, result;
+  var author, response, allBooks, result;
   return regeneratorRuntime.async(function _callee2$(_context2) {
     while (1) {
       switch (_context2.prev = _context2.next) {
         case 0:
           _context2.prev = 0;
           author = req.params.author.toLowerCase();
-          result = Object.values(books).filter(function (book) {
+          _context2.next = 4;
+          return regeneratorRuntime.awrap(axios.get('http://localhost:5001/'));
+
+        case 4:
+          response = _context2.sent;
+          allBooks = response.data;
+          result = Object.values(allBooks).filter(function (book) {
             return book.author.toLowerCase() === author;
           });
 
           if (!(result.length === 0)) {
-            _context2.next = 5;
+            _context2.next = 9;
             break;
           }
 
           return _context2.abrupt("return", res.status(404).json({
-            message: "No books found"
+            message: "No books found for this author"
           }));
 
-        case 5:
+        case 9:
           return _context2.abrupt("return", res.status(200).json(result));
 
-        case 8:
-          _context2.prev = 8;
+        case 12:
+          _context2.prev = 12;
           _context2.t0 = _context2["catch"](0);
           return _context2.abrupt("return", res.status(500).json({
-            message: "Error fetching books"
+            message: "Error retrieving books by author"
           }));
 
-        case 11:
+        case 15:
         case "end":
           return _context2.stop();
       }
     }
-  }, null, null, [[0, 8]]);
+  }, null, null, [[0, 12]]);
 });
-/* =========================================
-TASK 13 - GET BOOKS BY TITLE (Promise)
-========================================= */
+/* =====================================================
+TASK 13 - GET BOOKS BY TITLE (Promise + Axios)
+===================================================== */
 
 public_users.get('/title/:title', function (req, res) {
   var title = req.params.title.toLowerCase();
@@ -110,15 +117,19 @@ public_users.get('/title/:title', function (req, res) {
 
     if (result.length === 0) {
       return res.status(404).json({
-        message: "No books found"
+        message: "No books found for this title"
       });
     }
 
     return res.status(200).json(result);
   })["catch"](function () {
     return res.status(500).json({
-      message: "Error fetching books"
+      message: "Error retrieving books by title"
     });
   });
 });
+/* =====================================================
+EXPORT
+===================================================== */
+
 module.exports.general = public_users;
