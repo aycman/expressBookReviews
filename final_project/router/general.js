@@ -107,46 +107,34 @@ public_users.get('/author/:author',function (req, res) {
   });
 });
 
-// public_users.get('/author/:author', function (req, res) {
-//   const authorParams = req.params.author;
-
-//   // ۱. تبدیل مستقیم مقادیر شیء به یک آرایه از کتاب‌ها
-//   const bookList = Object.values(books);
-
-//   // ۲. فیلتر کردن کتاب‌ها بر اساس نام نویسنده
-//   const matchingBooks = bookList.filter(
-//     book => book.author.toLowerCase() === authorParams.toLowerCase()
-//   );
-
-//   // ۳. ارسال پاسخ
-//   if (matchingBooks.length > 0) {
-//     return res.status(200).json(matchingBooks);
-//   } else {
-//     return res.status(404).json({ message: "Book not found by this author" });
-//   }
-// });
-
-
-
-
 
 
 // Get all books based on title
+//using promise callbacks
 public_users.get('/title/:title',function (req, res) {
-  //1. Obtain all the values for the 'books' object.
-  const bookValues = Object.values(books);
-  //2. Iterate through the 'books' array & check the title matches the one provided in the request parameters.
-  const titleParams = req.params.title;
-  
-  const matchingBooks = bookValues.filter (book => book.title.toLowerCase() === titleParams.toLowerCase());
+  new Promise((resolve, reject) => {
+      //1. Obtain all the values for the 'books' object.
+    const bookValues = Object.values(books);
+    //2. Iterate through the 'books' array & check the title matches the one provided in the request parameters.
+    const titleParams = req.params.title;
+    
+    const matchingBooks = bookValues.filter (book => book.title.toLowerCase() === titleParams.toLowerCase());
 
-  //3. If a match is found, return the book details as a response.
-  if (matchingBooks.length > 0) {
-    return res.status(200).json(matchingBooks);
-  }else{
-    return res.status(404).json({message: "Book not found"});
-  }
+    //3. If a match is found, return the book details as a response.
+    if (matchingBooks.length > 0) {
+      resolve(matchingBooks);
+    }else{
+      reject("Book not found");
+    }
+  })
+  .then((data) => {
+    res.status(200).json(data);
+  })
+  .catch((err) => {
+    res.status(404).json({message: err});
+  })
 });
+
 
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
